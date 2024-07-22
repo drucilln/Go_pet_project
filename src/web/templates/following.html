@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ .Username }}'s Followings</title>
+    <style>
+        .top-right {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-right">
+        Logged in as: @{{ .CurrentUsername }} |
+        <a href="/logout">Logout</a>
+    </div>
+    <h1>{{ .Username }}'s Followings</h1>
+    {{ if .Error }}
+    <p style="color: red;">{{ .Error }}</p>
+    {{ else }}
+    <ul>
+        {{ range .Followings }}
+        <li>
+            <a href="/user/{{ .Username }}">{{ .Username }}</a>
+            {{ if .IsFollowing }}
+            <form method="post" action="/user/unfollow/{{ .Username }}" style="display:inline;">
+                <button type="submit">Unfollow</button>
+            </form>
+            {{ else }}
+            <form method="post" action="/user/follow/{{ .Username }}" style="display:inline;">
+                <button type="submit">Follow</button>
+            </form>
+            {{ end }}
+        </li>
+        {{ else }}
+        <p>No followings found.</p>
+        {{ end }}
+    </ul>
+    {{ end }}
+    <a href="/user/{{ .Username }}">Back to profile</a>
+</body>
+</html>

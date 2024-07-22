@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Messages with {{ .ReceiverUsername }}</title>
+    <style>
+        .message {
+            padding: 10px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        .message.sender {
+            background-color: #e0f7fa;
+        }
+        .message.receiver {
+            background-color: #ffecb3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Messages with {{ .ReceiverUsername }}</h1>
+    {{ if .Error }}
+    <p style="color: red;">{{ .Error }}</p>
+    {{ end }}
+    <div id="messages">
+        {{ range .Messages }}
+        <div class="message {{ if eq .SenderID $.CurrentUserID }}sender{{ else }}receiver{{ end }}">
+            <p>{{ .Content }}</p>
+            <p><small>{{ .CreatedAt }}</small></p>
+        </div>
+        {{ end }}
+    </div>
+    <h2>Send a message</h2>
+    <form id="messageForm">
+        <p>Message: <textarea name="content"></textarea></p>
+        <button type="submit">Send</button>
+    </form>
+
+    <script>
+        const currentUser = "{{ .CurrentUsername }}";
+        const receiverUser = "{{ .ReceiverUsername }}";
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const socket = new WebSocket(`ws://${window.location.host}/ws/messages/${receiverUser}`);
+
+            socket.onmessage = function(event) {
+                const msg = JSON.parse(event.data);
+                displayMessage(msg);
+            };
+
+            socket.onopen = function(event) {
+                console.log("WebSocket is open now.");
+            };
+
+            socket.onclose = function(event) {
+                console.log("WebSocket is closed now.");
+            };
+
+            socket.onerror = function(error) {
+                console.log("WebSocket error:", error);
+            };
+
+            document.getElementById('messageForm').onsubmit = function(e) {
+                e.preventDefault();
+                const content = this.elements['content'].value;
+                sendMessage(content);
+                this.elements['content'].value = '';
+            };
+
+            function sendMessage(content) {
+                const msg = {
+                    content: content
+                };
+                socket.send(JSON.stringify(msg));
+            }
+
+            function displayMessage(msg) {
+                const messageContainer = document.createElement('div');
+                messageContainer.classList.add('message', msg.sender === currentUser ? 'sender' : 'receiver');
+                messageContainer.innerHTML = `
+                    <p>${msg.Content}</p>
+                    <p><small>${new Date(msg.CreatedAt).toLocaleString()}</small></p>
+                `;
+                document.getElementById('messages').appendChild(messageContainer);
+            }
+        });
+    </script>
+</body>
+</html>
